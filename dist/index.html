@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0e24">
+  <title>Bee Hunt</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=VT323&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" href="/assets/sprites/bee_10.png">
+  <script type="module" crossorigin src="/assets/index-D001XsT9.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-5hV1WkKv.css">
+</head>
+<body>
+  <div class="app">
+    <header class="topbar">
+      <h1 class="logo">BEE <span>HUNT</span></h1>
+      <nav class="actions">
+        <button id="soundBtn" class="btn btn-ghost" aria-pressed="true" aria-label="Sonido activado">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M2 6h3l4-3v10l-4-3H2z"/><path class="sound-wave" d="M11 5.5c1 .7 1 4.3 0 5M12.8 4c2 1.5 2 6.5 0 8" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>
+          <span class="btn-label" id="soundLabel">SONIDO</span>
+        </button>
+        <button id="leaderboardBtn" class="btn btn-gold" aria-label="Ver récords">
+          <svg class="icon" viewBox="0 0 16 16" aria-hidden="true"><path d="M4 2h8v2h2v3l-3 2H5L2 7V4h2zm1 8h6v1H9v2h2v1H5v-1h2v-2H5z"/></svg>
+          <span class="btn-label">RÉCORDS</span>
+        </button>
+      </nav>
+    </header>
+
+    <main class="stage-frame">
+      <canvas id="gameCanvas" aria-label="Área de juego"></canvas>
+    </main>
+
+    <button id="mobileReloadBtn" class="btn btn-reload">RECARGAR</button>
+    <p class="rotate-hint">Gira el teléfono para ver el escenario más grande</p>
+  </div>
+
+  <!-- Game over -->
+  <div id="gameOverModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="gameOverTitle">
+    <div class="modal-box">
+      <h2 id="gameOverTitle" class="modal-title">FIN DEL JUEGO</h2>
+      <p class="final-score" id="finalScore">000000</p>
+      <dl class="stats">
+        <div><dt>Ronda</dt><dd id="finalRound">1</dd></div>
+        <div><dt>Aciertos</dt><dd id="finalHits">0/0</dd></div>
+        <div><dt>Precisión</dt><dd id="finalAccuracy">0%</dd></div>
+      </dl>
+
+      <form id="scoreForm" class="score-form" autocomplete="off">
+        <label for="nicknameInput">Tu nombre para la tabla</label>
+        <input type="text" id="nicknameInput" class="text-input" maxlength="8" placeholder="AAA" spellcheck="false" autocapitalize="characters">
+        <p id="rankNotice" class="notice" aria-live="polite"></p>
+        <div class="modal-actions">
+          <button type="submit" id="saveScoreBtn" class="btn btn-gold">GUARDAR</button>
+          <button type="button" id="playAgainBtn" class="btn btn-ghost">JUGAR DE NUEVO</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Leaderboard -->
+  <div id="leaderboardModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="lbTitle">
+    <div class="modal-box modal-wide">
+      <h2 id="lbTitle" class="modal-title">MEJORES PUNTAJES</h2>
+      <div class="table-wrap">
+        <table class="lb-table">
+          <thead>
+            <tr><th>#</th><th>Jugador</th><th>Puntos</th><th>Ronda</th><th>Precisión</th></tr>
+          </thead>
+          <tbody id="leaderboardBody"></tbody>
+        </table>
+      </div>
+      <div class="modal-actions">
+        <button id="closeLeaderboardBtn" class="btn btn-ghost">CERRAR</button>
+      </div>
+    </div>
+  </div>
+
+</body>
+</html>
