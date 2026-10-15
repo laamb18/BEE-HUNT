@@ -17,7 +17,7 @@ export function getSavedNickname() {
 }
 
 export function saveNickname(nick) {
-  const clean = (nick || 'BEE').toUpperCase().replace(/[^A-Z0-9_\-]/g, '').slice(0, 10);
+  const clean = (nick || 'BEE').toUpperCase().replace(/[^A-Z0-9_\-]/g, '').slice(0, 8);
   localStorage.setItem(STORAGE_KEY_NICK, clean);
   return clean;
 }
@@ -67,9 +67,15 @@ export async function submitScore({ score, round, hits, shots, nickname }) {
         shots
       })
     });
-    if (!res.ok) throw new Error('Server returned error');
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.error || 'Error en el servidor');
+    }
     return await res.json();
   } catch (err) {
+    if (err.message && err.message !== 'Failed to fetch' && !err.message.includes('NetworkError')) {
+      throw err;
+    }
     console.warn('Saved score locally (server unreachable):', err);
     return { success: true, localOnly: true, nickname: nick, score };
   }

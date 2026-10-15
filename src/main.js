@@ -93,14 +93,16 @@ scoreForm.addEventListener('submit', async (e) => {
   try {
     const res = await submitScore({ ...lastStats, nickname });
     lastSavedId = res.id ?? null;
-    rankNotice.textContent = res.rank ? `Quedaste en el puesto #${res.rank}` : 'Puntaje guardado';
+    rankNotice.textContent = res.rank
+      ? `Quedaste en el puesto #${res.rank}`
+      : (res.localOnly ? 'Guardado localmente' : 'Puntaje guardado');
     saveScoreBtn.textContent = 'GUARDADO';
     setTimeout(() => {
       closeModal(gameOverModal);
       openLeaderboard();
     }, 1100);
-  } catch {
-    rankNotice.textContent = 'No se pudo guardar. Intenta de nuevo.';
+  } catch (err) {
+    rankNotice.textContent = err.message || 'No se pudo guardar. Intenta de nuevo.';
     rankNotice.classList.add('error');
     saveScoreBtn.disabled = false;
     saveScoreBtn.textContent = 'GUARDAR';

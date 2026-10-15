@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import compression from 'compression';
+import rateLimit from 'express-rate-limit';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { getTopScores, getPlayerBest, addScore } from './db.js';
@@ -10,11 +12,34 @@ const __dirname = path.dirname(__filename);
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-app.use(cors());
-app.use(express.json());
+// Necesario cuando corre detrás de Nginx o un balanceador en AWS EC2
+app.set('trust proxy', 1);
 
-// API Routes
-app.get('/api/leaderboard', (req, res) => {
+app.use(compression());
+app.use(cors());
+app.use(express.json({ limit: '10kb' })); // Evita ataques de payloads gigantes
+
+// Límite general para lecturas de API
+const apiLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000, // 1 minuto
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+// Límite estricto para guardar puntajes (máximo 6 por minuto por IP)
+const scoreSubmitLimiter = rateLimit({
+  windowMs: 1 * 60 * 1000,
+  max: 6,
+  message: { success: false, error: 'Demasiados intentos. Espera un minuto.' }
+});
+
+// Healthcheck para monitoreo en AWS
+app.get('/api/health', (_req, res) => {
+  res.json({ status: 'ok', uptime: process.uptime() });
+});
+
+app.get('/api/leaderboard', apiLimiter, (req, res) => {
   try {
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit, 10) || 20));
     const scores = getTopScores(limit);
@@ -25,7 +50,7 @@ app.get('/api/leaderboard', (req, res) => {
   }
 });
 
-app.get('/api/leaderboard/me', (req, res) => {
+app.get('/api/leaderboard/me', apiLimiter, (req, res) => {
   try {
     const { deviceId } = req.query;
     if (!deviceId) {
@@ -39,7 +64,7 @@ app.get('/api/leaderboard/me', (req, res) => {
   }
 });
 
-app.post('/api/scores', (req, res) => {
+app.post('/api/scores', scoreSubmitLimiter, (req, res) => {
   try {
     const { deviceId, nickname, score, round, hits, shots } = req.body;
     if (!deviceId || typeof score !== 'number') {
@@ -57,25 +82,28 @@ app.post('/api/scores', (req, res) => {
 
     res.json({ success: true, ...saved });
   } catch (err) {
-    console.error('Error adding score:', err);
-    res.status(500).json({ success: false, error: 'Failed to record score' });
+    const status = err.statusCode || 500;
+    console.error('Error adding score:', err.message);
+    res.status(status).json({ success: false, error: status === 422 ? err.message : 'Failed to record score' });
   }
 });
 
-// Serve frontend build if dist exists
+// Vite copia automáticamente public/ dentro de dist/ al ejecutar "npm run build"
 const distPath = path.join(__dirname, '..', 'dist');
-app.use(express.static(distPath));
-app.use(express.static(path.join(__dirname, '..', 'public')));
+app.use(express.static(distPath, {
+  maxAge: '7d', // Cachea sprites y bundles por 7 días en el navegador de los jugadores
+  index: false
+}));
 
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api')) return next();
   res.sendFile(path.join(distPath, 'index.html'), (err) => {
     if (err) {
-      res.status(200).send('Bee Hunt API is running. Start Vite dev server for client.');
+      res.status(200).send('Bee Hunt API is running. Run "npm run build" to serve the client.');
     }
   });
 });
 
-app.listen(PORT, () => {
-  console.log(`🐝 BEE HUNT Leaderboard Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`🐝 BEE HUNT Server running on http://0.0.0.0:${PORT}`);
 });

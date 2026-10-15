@@ -18,6 +18,7 @@ from collections import deque
 from PIL import Image
 
 OUTPUT_DIR = "public/assets/sprites"
+SOURCE_DIR = "raw_assets"
 
 # source -> (output, target height in px)
 IMAGES = {
@@ -116,10 +117,11 @@ def process(src, dst, target_h):
 def main():
     os.makedirs(OUTPUT_DIR, exist_ok=True)
     for src, (dst, target_h) in IMAGES.items():
-        if os.path.exists(src):
-            process(src, os.path.join(OUTPUT_DIR, dst), target_h)
+        src_path = os.path.join(SOURCE_DIR, src)
+        if os.path.exists(src_path):
+            process(src_path, os.path.join(OUTPUT_DIR, dst), target_h)
         else:
-            print(f"Warning: {src} not found")
+            print(f"Warning: {src_path} not found")
 
 
 if __name__ == "__main__":
