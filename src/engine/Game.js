@@ -47,6 +47,8 @@ export class Game {
     this.bees = [];
     this.spawnTimers = [0, 0.7];
     this.horseTimer = 5;
+    this.campLimit = 5.5; // seconds firing at one side before the horse reacts
+    this.resetCamping();
     this.stateTimer = 0;
     this.lastTime = 0;
     this.best = Number(localStorage.getItem(BEST_KEY) || 0);
@@ -159,6 +161,7 @@ export class Game {
     this.bullets = this.maxBullets;
     this.reloading = false;
     this.combo = 0;
+    this.resetCamping();
     this.horseTimer = n === 1 ? (4.5 + Math.random() * 2) : 1.5;
     this.state = 'INTRO';
     this.stateTimer = 1.8;
@@ -270,6 +273,7 @@ export class Game {
 
     this.bullets--;
     this.totalShots++;
+    this.registerShotSector(x);
     this.stage.triggerFlash();
     audio.playShot();
 
@@ -303,6 +307,52 @@ export class Game {
       }
     }
     this.autoReload();
+  }
+
+  // ---------- ANTI-CAMPING ----------
+  resetCamping() {
+    this.campSector = -1;
+    this.campTime = 0;
+    this.campShots = 0;
+    this.sinceShot = 0;
+  }
+
+  sectorOf(x) {
+    return x < 320 ? 0 : (x <= 480 ? 1 : 2);
+  }
+
+  registerShotSector(x) {
+    const s = this.sectorOf(x);
+    if (s !== this.campSector) {
+      this.campSector = s;
+      this.campTime = 0;
+      this.campShots = 0;
+    }
+    this.campShots++;
+    this.sinceShot = 0;
+  }
+
+  updateCamping(dt) {
+    if (this.campSector < 0) return;
+    this.sinceShot += dt;
+    // Pause in firing (or long reload) forgives the streak
+    if (this.sinceShot > 3) {
+      this.resetCamping();
+      return;
+    }
+    this.campTime += dt;
+    if (this.campTime >= this.campLimit && this.campShots >= 4 && this.horse) {
+      const lane = this.horse.lanes[this.campSector];
+      const already = this.horse.intercept(lane, 3.5);
+      if (already) {
+        this.horse.laugh();
+        audio.playLaugh();
+      }
+      this.horseTimer = Math.max(this.horseTimer, 3);
+      // Keep watching: next check after another stretch
+      this.campTime = this.campLimit - 3;
+      this.campShots = 0;
+    }
   }
 
   autoReload() {
@@ -350,6 +400,7 @@ export class Game {
     } else if (this.state === 'PLAYING') {
       this.timerLeft -= dt;
       this.horseTimer -= dt;
+      this.updateCamping(dt);
       if (this.horseTimer <= 0 && this.horse) {
         const holdTime = this.round === 1 ? 2.8 : (3.8 + Math.random() * 0.6);
         this.horse.popup('cheer', holdTime);

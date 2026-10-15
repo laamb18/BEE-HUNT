@@ -173,6 +173,68 @@ body {
   }
 }
 
+/* Mobile landscape: big stage in the middle, controls on both sides */
+@media (hover: none) and (pointer: coarse) and (orientation: landscape) {
+  :root {
+    --side: clamp(96px, 16vw, 150px);
+  }
+  .app {
+    width: 100vw;
+    height: 100dvh;
+    display: grid;
+    grid-template-columns: var(--side) 1fr var(--side);
+    grid-template-areas: 'left stage right';
+    align-items: center;
+    gap: 10px;
+    padding: 6px calc(8px + env(safe-area-inset-right)) 6px calc(8px + env(safe-area-inset-left));
+  }
+  .topbar {
+    grid-area: left;
+    flex-direction: column;
+    align-items: stretch;
+    justify-content: center;
+    gap: 14px;
+  }
+  .logo {
+    font-size: 14px;
+    line-height: 1.5;
+    text-align: center;
+  }
+  .actions {
+    flex-direction: column;
+  }
+  .actions .btn {
+    justify-content: center;
+    padding: 12px 6px;
+    font-size: 9px;
+  }
+  .actions .btn-label {
+    display: inline;
+  }
+  .stage-frame {
+    grid-area: stage;
+    justify-self: center;
+    width: auto;
+    height: min(calc(100dvh - 12px), calc((100vw - 2 * var(--side) - 36px) * 3 / 4));
+  }
+  .btn-reload {
+    grid-area: right;
+    align-self: center;
+    height: min(46dvh, 150px);
+    font-size: 11px;
+    padding: 8px;
+    border-radius: 8px;
+    box-shadow: 0 5px 0 #7c2226, 0 8px 0 #000;
+  }
+  .btn-reload:active {
+    transform: translateY(5px);
+    box-shadow: 0 0 0 #7c2226, 0 3px 0 #000;
+  }
+  .rotate-hint {
+    display: none;
+  }
+}
+
 @media (max-width: 520px) {
   .btn-label {
     display: none;
@@ -362,4 +424,34 @@ body {
   padding: 24px !important;
   text-align: center !important;
   color: var(--dim);
+}
+
+/* Short screens (phones in landscape): keep modals inside the viewport */
+@media (max-height: 520px) {
+  .modal-box {
+    max-height: 96dvh;
+    overflow-y: auto;
+    padding: 14px 18px;
+  }
+  .modal-title {
+    font-size: 13px;
+    margin-bottom: 10px;
+  }
+  .final-score {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+  .stats {
+    margin-bottom: 10px;
+  }
+  .stats dd {
+    font-size: 22px;
+  }
+  .table-wrap {
+    max-height: 52dvh;
+    margin-bottom: 10px;
+  }
+  .modal-actions .btn {
+    padding: 10px 12px;
+  }
 }

@@ -22,6 +22,8 @@ export class Horse {
 
     this.y = this.hiddenY;
     this.cx = boundsWidth / 2;
+    this.targetCx = this.cx;
+    this.slideSpeed = 650;
     this.state = 'HIDDEN'; // HIDDEN, RISING, UP, SINKING
     this.pose = 'cheer';
     this.t = 0;
@@ -39,13 +41,31 @@ export class Horse {
     return this.state !== 'HIDDEN';
   }
 
-  popup(pose = 'cheer', hold = null) {
+  popup(pose = 'cheer', hold = null, laneX = null) {
     if (this.state !== 'HIDDEN') return;
-    this.cx = this.lanes[Math.floor(Math.random() * this.lanes.length)];
+    this.cx = laneX ?? this.lanes[Math.floor(Math.random() * this.lanes.length)];
+    this.targetCx = this.cx;
     this.pose = pose;
     this.state = 'RISING';
     this.t = 0;
     this.hold = hold ?? 3.2 + Math.random() * 1.3;
+  }
+
+  // Block a specific lane: pop up there, or slide over if already visible.
+  // Returns true if the horse was already covering that lane.
+  intercept(laneX, hold = 3.5) {
+    if (this.state === 'HIDDEN') {
+      this.popup('cheer', hold, laneX);
+      return false;
+    }
+    const already = Math.abs(this.targetCx - laneX) < 1;
+    this.targetCx = laneX;
+    if (this.state === 'SINKING') {
+      this.state = 'RISING';
+      this.t = Math.max(0, 1 - this.t);
+    }
+    this.hold = Math.max(this.hold, hold);
+    return already;
   }
 
   laugh() {
@@ -65,6 +85,12 @@ export class Horse {
   update(dt) {
     this.pop = Math.max(0, this.pop - dt * 6);
     this.shake += dt * 30;
+
+    const dx = this.targetCx - this.cx;
+    if (dx !== 0) {
+      const step = this.slideSpeed * dt;
+      this.cx = Math.abs(dx) <= step ? this.targetCx : this.cx + Math.sign(dx) * step;
+    }
 
     if (this.state === 'RISING') {
       this.t = Math.min(1, this.t + dt / 0.35);
