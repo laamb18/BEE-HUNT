@@ -19,4 +19,4 @@ ENV DATA_DIR=/app/data
 
 EXPOSE 3001
 
-CMD ["node", "--experimental-sqlite", "server/index.js"]
+CMD ["node", "server/index.js"]
